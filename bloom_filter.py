@@ -1,5 +1,3 @@
-import numpy as np
-
 class BloomFilter:
     def __init__(self, k: int, n: int):
         '''Initializes the bloom filter
@@ -12,7 +10,7 @@ class BloomFilter:
         self._k = k
         self._n = n
         self._m = 0
-        self._bf = np.zeros(n, dtype=bool)
+        self._bf = [0 for _ in range(n)]
     
     @property
     def k(self):
@@ -27,7 +25,7 @@ class BloomFilter:
         return self._m
     
     def _hf(self, key):
-        return np.abs(hash(key))
+        return abs(hash(key))
     
     def add(self, element: str):
         '''Adds an element to the Bloom Filter'''
