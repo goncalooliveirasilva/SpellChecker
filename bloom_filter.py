@@ -1,5 +1,5 @@
 class BloomFilter:
-    def __init__(self, k: int, n: int):
+    def __init__(self, n: int, k: int):
         '''Initializes the bloom filter
            Parameters:
             hf - hash function to be applied
@@ -27,15 +27,15 @@ class BloomFilter:
     def _hf(self, key):
         return abs(hash(key))
     
-    def add(self, element: str):
+    def add(self, element: str) -> None:
         '''Adds an element to the Bloom Filter'''
         assert element is not None, "element is not valid"
         for i in range(self._k):
             p = self._hf(str(element)+str(i)) % self._n
             self._bf[p] = 1
-        self.m += 1
+        self._m += 1
 
-    def member(self, element: str):
+    def member(self, element: str) -> bool:
         '''Checks if element is member of bloom filter'''
         assert element is not None, "element is not valid"
         for i in range(self.k):

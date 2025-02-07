@@ -2,7 +2,7 @@ import json
 from PyQt6.QtGui import QAction, QKeySequence
 from PyQt6.QtCore import Qt
 import os
-from auxiliary_classes import UnsavedFileDialog
+from auxiliary_classes import UnsavedFileDialog, ConfWindow
 from PyQt6.QtWidgets import (
     QMainWindow, 
     QWidget, 
@@ -37,6 +37,11 @@ class MainWindow(QMainWindow):
 
         self.open_files = {} # store open files: {tab_index: file_path}
 
+        # Windows
+        self.conf_window = None
+
+        # Spell checking
+
         # Central widget and layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
@@ -66,6 +71,7 @@ class MainWindow(QMainWindow):
         self.new_file_action = QAction("New File", self)
         self.new_file_action.setShortcut(QKeySequence("Ctrl+N"))
         self.new_file_action.triggered.connect(self.new_file)
+        
 
         self.open_file_action = QAction("Open File", self)
         self.open_file_action.setShortcut(QKeySequence("Ctrl+O"))
@@ -79,21 +85,21 @@ class MainWindow(QMainWindow):
         self.save_all_action.setShortcut(QKeySequence("Ctrl+Shift+S"))
         self.save_all_action.triggered.connect(self.save_all_files)
 
-        self.edit_shortcuts_action = QAction("Edit Shortcuts", self)
-        #self.edit_shortcuts_action.triggered.connect()
+        self.configurations_action = QAction("Configurations", self)
+        self.configurations_action.triggered.connect(self.configurations_window)
 
         self.toolbar.addAction(self.new_file_action)
         self.toolbar.addAction(self.open_file_action)
         self.toolbar.addAction(self.save_file_action)
         self.toolbar.addAction(self.save_all_action)
-        self.toolbar.addAction(self.edit_shortcuts_action)
+        self.toolbar.addAction(self.configurations_action)
 
         self.file_menu.addAction(self.new_file_action)
         self.file_menu.addAction(self.open_file_action)
         self.file_menu.addAction(self.save_file_action)
         self.file_menu.addAction(self.save_all_action)
 
-        self.conf_menu.addAction(self.edit_shortcuts_action)
+        self.conf_menu.addAction(self.configurations_action)
 
 
         self.restore_session()
@@ -108,6 +114,7 @@ class MainWindow(QMainWindow):
         index = self.tabs.addTab(text_edit, "Untitled") # add a new tab
         self.tabs.setCurrentIndex(index) # switch to the new tab
         self.open_files[index] = None
+        self.tabs.setTabToolTip(index, "Untitled")
         self.track_file_changes(text_edit)
 
 
@@ -134,7 +141,7 @@ class MainWindow(QMainWindow):
                     index = self.tabs.addTab(text_edit, os.path.basename(file_name))
                     self.tabs.setCurrentIndex(index)
                     self.open_files[index] = file_name
-
+                    self.tabs.setTabToolTip(index, file_name)
                     self.track_file_changes(text_edit)
 
                 except Exception as e:
@@ -152,11 +159,13 @@ class MainWindow(QMainWindow):
         # If it's a new file
         if file_name is None:
             file_name, _ = QFileDialog.getSaveFileName(self, "Save File", os.path.expanduser("~"), SUPPORTED_FILES)
+
             if not file_name:
                 return
             
             self.open_files[index] = file_name
             self.tabs.setTabText(index, os.path.basename(file_name))
+            self.tabs.setTabToolTip(index, file_name)
 
         # Save
         try:
@@ -171,15 +180,9 @@ class MainWindow(QMainWindow):
 
     def save_all_files(self):
         """Saves all opened files"""
-        for index, file_name in self.open_files.items():
-            if file_name:
-                try:
-                    text_edit = self.tabs.widget(index)
-                    with open(file_name, "w", encoding="utf-8") as file:
-                        file.write(text_edit.toPlainText())
-                    self.tabs.setTabText(index, os.path.basename(file_name)) # Remove "*"
-                except Exception as e:
-                    QMessageBox.critical(self, f"Error saving file: {e}")
+        for index in range(self.tabs.count()):
+            self.tabs.setCurrentIndex(index)
+            self.save_file()
     
 
     def close_tab(self, index):
@@ -282,3 +285,10 @@ class MainWindow(QMainWindow):
 
         values.insert(to_index, values.pop(from_index))
         self.open_files = dict(zip(keys, values))
+
+
+    def configurations_window(self):
+        """Opens and manages the configuration window"""
+        if self.conf_window is None:
+            self.conf_window = ConfWindow()
+        self.conf_window.show()
